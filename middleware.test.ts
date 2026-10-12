@@ -122,4 +122,77 @@ describe('Next.js Middleware Auth Guard', () => {
 
     expect(res.status).toBe(200);
   });
+
+  describe('agent API bearer path', () => {
+    const url = 'http://localhost:3000/api/agent/v1/today';
+    const token = `nova_agt_${'A1_-'.repeat(11).slice(0, 43)}`;
+
+    it('returns 401 invalid_token without an Authorization header', async () => {
+      const res = await middleware(new NextRequest(url));
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: 'invalid_token' });
+    });
+
+    it('returns 401 even with a valid session cookie', async () => {
+      const req = new NextRequest(url, {
+        headers: { cookie: `nova_session=${encryptSession(mockSession)}` },
+      });
+      const res = await middleware(req);
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: 'invalid_token' });
+    });
+
+    it('returns 401 even when AUTH_DISABLED is true', async () => {
+      process.env.AUTH_DISABLED = 'true';
+      const res = await middleware(new NextRequest(url));
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: 'invalid_token' });
+    });
+
+    it('passes through with a well-formed bearer token', async () => {
+      expect(token).toHaveLength(9 + 43);
+      const res = await middleware(
+        new NextRequest(url, { headers: { authorization: `Bearer ${token}` } })
+      );
+      expect(res.status).toBe(200);
+      expect(res.headers.get('x-middleware-next')).toBe('1');
+    });
+
+    const malformed: Array<[string, string]> = [
+      ['wrong prefix', `Bearer other_${'a'.repeat(43)}`],
+      ['too short', `Bearer nova_agt_${'a'.repeat(42)}`],
+      ['too long', `Bearer nova_agt_${'a'.repeat(44)}`],
+      ['bad characters', `Bearer nova_agt_${'a'.repeat(42)}!`],
+      ['non-bearer scheme', `Basic nova_agt_${'a'.repeat(43)}`],
+    ];
+    for (const [name, header] of malformed) {
+      it(`rejects malformed token: ${name}`, async () => {
+        const res = await middleware(
+          new NextRequest(url, { headers: { authorization: header } })
+        );
+        expect(res.status).toBe(401);
+        expect(await res.json()).toEqual({ error: 'invalid_token' });
+      });
+    }
+
+    it('does not apply to /api/agent-admin/ (cookie-gated)', async () => {
+      const adminUrl = 'http://localhost:3000/api/agent-admin/tokens';
+      const noCookie = await middleware(new NextRequest(adminUrl));
+      expect(noCookie.status).toBe(401);
+      expect((await noCookie.json()).error).toBe('Unauthorized');
+
+      const bearerOnly = await middleware(
+        new NextRequest(adminUrl, { headers: { authorization: `Bearer ${token}` } })
+      );
+      expect(bearerOnly.status).toBe(401);
+      expect((await bearerOnly.json()).error).toBe('Unauthorized');
+
+      const withCookie = await middleware(
+        new NextRequest(adminUrl, {
+          headers: { cookie: `nova_session=${encryptSession(mockSession)}` },
+        })
+      );
+      expect(withCookie.status).toBe(200);
+    });
+  });
 });
