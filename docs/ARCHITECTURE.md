@@ -187,7 +187,9 @@ app/api/              API routes (server-only)
   ├── import/         Parse uploaded schedule files (.xlsx/.csv/.tsv)
   ├── diary/          Diary sync boundary (accepts exactly { content })
   ├── session/        Session state management
-  └── ai/             AI processing endpoints
+  ├── ai/             AI processing endpoints
+  ├── agent/          Agent API (bearer token, DB mode only): reads and proposals, `/api/agent/v1/*`
+  └── agent-admin/    Owner-only token, approval and audit routes (cookie session + AGENT_ADMIN_EMAILS)
 
 lib/
   ├── sheets/         Google Sheets API client (isolated)
@@ -197,6 +199,7 @@ lib/
   ├── learning-*      Capture projection ({ content } sync payload), Learnings filters and views, modal draft state
   ├── export-notes    Deterministic CSV/Markdown note serialization
   ├── n8n/            n8n webhook client
+  ├── agent/          Agent tokens, scopes, auth wrapper, audit, rate limit, read projections, proposal domains, approvals
   └── session/        Session business logic
 
 components/           React components (UI only, no API calls)
@@ -254,5 +257,29 @@ components/           React components (UI only, no API calls)
 ### Optional database working copy (`lib/db/`, `scripts/`)
 
 `lib/db/` holds the drizzle schema (`schema.ts`) and the connection (`index.ts`, `ssl.ts`); the database is used only when `DATABASE_URL` is set (`isDbConfigured()`). Migrations are in `drizzle/`. `scripts/` contains the user-run tooling: `migrate.ts`, `seed-db.ts`, `db-inspect.ts`, `print-baseline-sql.ts` and the file-to-database sync scripts (`sync-diary-to-remote-db.ts`, `sync-schedule-to-remote-db.ts`), which default to a dry run and read private rows from gitignored `data/private/`. Agents never connect to the remote database. Rules and procedures: [`docs/DATABASE.md`](DATABASE.md); status of the decision: [ADR-0006](adr/0006-database-working-copy-and-sync-conflicts.md) (Proposed).
+
+### Agent API and approval (`app/api/agent/`, `app/api/agent-admin/`, `lib/agent/`)
+
+An external agent (OpenClaw) can read onboarding data and propose changes; it can never apply them. See [ADR-0007](adr/0007-agent-api-and-approval-boundary.md) (Proposed).
+
+- `app/api/agent/v1/*`: bearer-token routes (`nova_agt_...`). Every handler is wrapped by `withAgentRoute` (`lib/agent/auth.ts`); `middleware.ts` only checks the header shape because the edge runtime cannot reach the database. Database mode only.
+- `app/api/agent-admin/*`: owner-only routes (tokens, proposals, approve, reject, audit). Cookie session plus `AGENT_ADMIN_EMAILS` via `requireAdminSession` (`lib/agent/admin-auth.ts`); a bearer header is rejected.
+- `lib/agent/`: `tokens.ts` / `scopes.ts` / `auth.ts` (credentials), `audit.ts` / `rate-limit.ts`, `read/` (database projections), `domains/` (per-domain validation, snapshot and executor), `proposals.ts` (creation), `approvals.ts` (approve and reject), `tokens-admin.ts` (issue and revoke), `config.ts` (limits from `AGENT_*` variables).
+- UI: Settings section `app/components/AgentAccessSection.tsx` with `app/components/AgentProposalCard.tsx`; the pending-count badge is `AgentPendingBadgeView` in `app/components/PrimaryNav.tsx`, rendered next to the Settings item by `app/components/AppShell.tsx`; the browser helper is `lib/agent-admin-client.ts`.
+- Tables (migration `drizzle/0001_agent_access.sql`): `agent_tokens`, `agent_proposals`, `agent_audit_log`.
+- Boundary rule: nothing under `lib/agent/` or `app/api/agent*/` may write to Google Sheets or import `readSchedule`.
+
+Data flow:
+
+```
+OpenClaw skill --GET (bearer)--> /api/agent/v1/* --> lib/agent/read --> PostgreSQL
+OpenClaw skill --POST /proposals (bearer)--> validate --> agent_proposals (status pending)
+Owner (browser, Settings) --> /api/agent-admin/proposals --> reviews before/changes diff
+Owner --POST approve--> one transaction: expiry, token, warnings, staleness (SQL) --> apply to the DB table
+                                      --> proposal executed + audit row
+OpenClaw --GET /proposals/:id--> status (executed | rejected | failed | expired | cancelled)
+```
+
+Execution writes PostgreSQL only. The spreadsheet is updated later, if at all, by the user's existing bulk sync (ADR-0006).
 
 See [`docs/ROADMAP.md`](ROADMAP.md) for phase definitions.

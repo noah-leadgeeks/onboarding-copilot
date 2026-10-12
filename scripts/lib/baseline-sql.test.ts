@@ -41,17 +41,22 @@ describe('buildBaselineSql (real drizzle/ folder)', () => {
     );
   });
 
-  it('emits one guarded INSERT per journal entry with the file sha256 and the journal `when`', () => {
+  it('emits exactly one guarded INSERT, for 0000_baseline, with the file sha256 and the journal `when`', () => {
     const inserts = insertLines(sql);
     expect(journal.length).toBeGreaterThan(0);
-    expect(inserts).toHaveLength(journal.length);
-    journal.forEach((entry, i) => {
-      const raw = fs.readFileSync(path.join(MIGRATIONS_FOLDER, `${entry.tag}.sql`));
-      const hash = crypto.createHash('sha256').update(raw).digest('hex');
-      expect(inserts[i]).toBe(
-        `INSERT INTO drizzle.__drizzle_migrations (hash, created_at) SELECT '${hash}', ${entry.when} ` +
-          `WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at >= ${entry.when});`,
-      );
+    expect(journal[0].tag).toBe('0000_baseline');
+    expect(inserts).toHaveLength(1);
+    const raw = fs.readFileSync(path.join(MIGRATIONS_FOLDER, `${journal[0].tag}.sql`));
+    const hash = crypto.createHash('sha256').update(raw).digest('hex');
+    expect(inserts[0]).toBe(
+      `INSERT INTO drizzle.__drizzle_migrations (hash, created_at) SELECT '${hash}', ${journal[0].when} ` +
+        `WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at >= ${journal[0].when});`,
+    );
+  });
+
+  it('emits no row for later journal entries (their DDL must still run)', () => {
+    journal.slice(1).forEach((entry) => {
+      expect(sql).not.toContain(String(entry.when));
     });
   });
 
@@ -63,12 +68,12 @@ describe('buildBaselineSql (real drizzle/ folder)', () => {
 describe('buildBaselineSql (validation)', () => {
   const good = { hash: 'a'.repeat(64), folderMillis: 1700000000000 };
 
-  it('guards every INSERT so a second run inserts nothing', () => {
+  it('guards the INSERT so a second run inserts nothing, and ignores later entries', () => {
     const sql = buildBaselineSql([good, { hash: 'b'.repeat(64), folderMillis: 1700000000001 }]);
     const inserts = insertLines(sql);
-    expect(inserts).toHaveLength(2);
+    expect(inserts).toHaveLength(1);
     expect(inserts[0]).toContain('WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at >= 1700000000000)');
-    expect(inserts[1]).toContain('WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at >= 1700000000001)');
+    expect(sql).not.toContain('1700000000001');
   });
 
   it('rejects an empty journal', () => {
@@ -94,7 +99,7 @@ describe('buildBaselineSql (validation)', () => {
   ];
   for (const [label, folderMillis] of badMillis) {
     it(`rejects a ${label} folderMillis`, () => {
-      expect(() => buildBaselineSql([good, { ...good, folderMillis }])).toThrow('#2: folderMillis');
+      expect(() => buildBaselineSql([{ ...good, folderMillis }])).toThrow('#1: folderMillis');
     });
   }
 });

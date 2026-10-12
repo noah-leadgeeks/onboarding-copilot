@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { decryptSessionWebCrypto, isSessionValid } from '@/lib/auth/edge-session';
 
+// Agent API bearer tokens: `nova_agt_` + 43 base64url chars. Format check only
+// (no DB access in the edge runtime); the route handler verifies the token.
+const AGENT_TOKEN_RE = /^Bearer nova_agt_[A-Za-z0-9_-]{43}$/;
+
 const PUBLIC_EXACT_PATHS = new Set(['/login', '/api/health']);
 
 const PUBLIC_PATH_PREFIXES = [
@@ -14,6 +18,15 @@ const PUBLIC_PATH_PREFIXES = [
 
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+
+  // 0. Agent API: bearer-only. Cookies and AUTH_DISABLED never apply here.
+  if (pathname.startsWith('/api/agent/')) {
+    const authorization = request.headers.get('authorization') ?? '';
+    if (AGENT_TOKEN_RE.test(authorization)) {
+      return NextResponse.next();
+    }
+    return NextResponse.json({ error: 'invalid_token' }, { status: 401 });
+  }
 
   // 1. If authentication is explicitly disabled via env, allow all traffic
   if (process.env.AUTH_DISABLED === 'true') {

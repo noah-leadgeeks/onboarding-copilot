@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db, schema, isDbConfigured } from '@/lib/db';
 import { asc, eq } from 'drizzle-orm';
 import { FEEDBACK_SESSIONS, type FeedbackEntry, type FeedbackRatings } from '@/lib/feedback';
+import { feedbackEntryFromRow } from '@/lib/feedback-db';
 
 export async function GET() {
   if (isDbConfigured()) {
@@ -11,19 +12,7 @@ export async function GET() {
         db.select().from(schema.feedbackEntries).orderBy(asc(schema.feedbackEntries.rowNumber)),
       ]);
 
-      const feedbackEntries: FeedbackEntry[] = entries.map((e) => ({
-        sessionId: e.sessionId,
-        sessionTitle: e.topic || e.sessionId,
-        pic: e.pic || '',
-        date: e.date || '',
-        ratings: (e.ratings || {}) as FeedbackRatings,
-        hasQuestions: e.hasQuestions ?? false,
-        questionExplanation: e.questionExplanation || '',
-        questionAddressing: (e.questionAddressing || '') as any,
-        suggestions: e.suggestions || '',
-        createdAt: e.updatedAt,
-        updatedAt: e.updatedAt,
-      }));
+      const feedbackEntries: FeedbackEntry[] = entries.map(feedbackEntryFromRow);
 
       return NextResponse.json({
         success: true,

@@ -156,7 +156,7 @@
 - [ ] Manager dashboard
 - [ ] HR reporting
 - [ ] Role-based access control
-- [ ] Audit log
+- [x] Audit log (agent API requests and owner decisions: `agent_audit_log`, [ADR-0007](adr/0007-agent-api-and-approval-boundary.md))
 
 ---
 

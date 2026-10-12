@@ -23,6 +23,7 @@ import { SyncStatusChip } from '@/app/components/SyncStatusChip';
 import { CommandPalette } from '@/app/components/CommandPalette';
 
 import { GuideTour, allPagesTourSteps } from '@/app/components/GuideTour';
+import { AgentPendingBadgeView, useAgentPendingCount } from '@/app/components/PrimaryNav';
 import { GUIDE_TOUR_STORAGE_KEY, readGuideTourState, writeGuideTourState } from '@/lib/guide-tour';
 
 interface NavItem {
@@ -99,6 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<{ name: string; email: string; picture?: string } | null>(null);
 
   const isLoginPage = pathname === '/login';
+  const agentPendingCount = useAgentPendingCount(!isLoginPage);
 
   // Check auth session
   useEffect(() => {
@@ -299,6 +301,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <span className="truncate">{item.label}</span>
                       </div>
 
+                      {item.href === '/settings' && <AgentPendingBadgeView count={agentPendingCount} />}
+
                       {active && (
                         <span className="size-1.5 rounded-full bg-mint-400 shrink-0" />
                       )}
@@ -472,6 +476,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                               />
                               <span>{item.label}</span>
                             </div>
+                            {item.href === '/settings' && <AgentPendingBadgeView count={agentPendingCount} />}
                             {active && (
                               <span className="size-1.5 rounded-full bg-mint-400" />
                             )}

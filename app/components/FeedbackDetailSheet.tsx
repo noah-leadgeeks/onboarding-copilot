@@ -6,6 +6,7 @@ import {
   formatFeedbackDate,
   isRatingComplete,
   normalizeQuestionAddressing,
+  QUESTION_ADDRESSING_OPTIONS,
   type FeedbackEntry,
   type FeedbackRatingDimension,
   type FeedbackRatings,
@@ -59,29 +60,20 @@ interface AddressingChoiceConfig {
   badgeBorder: string;
 }
 
-const ADDRESSING_CHOICES: AddressingChoiceConfig[] = [
-  {
-    value: 'Chat response is fine',
-    label: 'Chat response is fine',
-    badgeBg: 'bg-amber-100',
-    badgeText: 'text-amber-900',
-    badgeBorder: 'border-amber-200',
-  },
-  {
-    value: "I don't have any questions today",
-    label: "I don't have any questions today",
-    badgeBg: 'bg-purple-100',
-    badgeText: 'text-purple-900',
-    badgeBorder: 'border-purple-200',
-  },
-  {
-    value: 'I’d like to schedule aN online live meeting',
-    label: 'I’d like to schedule aN online live meeting',
-    badgeBg: 'bg-sky-100',
-    badgeText: 'text-sky-900',
-    badgeBorder: 'border-sky-200',
-  },
+type AddressingChoiceStyle = Omit<AddressingChoiceConfig, 'value' | 'label'>;
+
+// Option values come from QUESTION_ADDRESSING_OPTIONS (single source); badge styling stays local, by position.
+const ADDRESSING_STYLES: readonly AddressingChoiceStyle[] = [
+  { badgeBg: 'bg-amber-100', badgeText: 'text-amber-900', badgeBorder: 'border-amber-200' },
+  { badgeBg: 'bg-purple-100', badgeText: 'text-purple-900', badgeBorder: 'border-purple-200' },
+  { badgeBg: 'bg-sky-100', badgeText: 'text-sky-900', badgeBorder: 'border-sky-200' },
 ];
+
+const ADDRESSING_CHOICES: AddressingChoiceConfig[] = QUESTION_ADDRESSING_OPTIONS.map((value, i) => ({
+  value,
+  label: value,
+  ...ADDRESSING_STYLES[i],
+}));
 
 export function FeedbackDetailSheet({
   session,

@@ -1,4 +1,16 @@
-import { pgTable, text, integer, boolean, jsonb, timestamp, bigint } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  integer,
+  boolean,
+  jsonb,
+  timestamp,
+  bigint,
+  check,
+  unique,
+  index,
+} from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 export const activities = pgTable('activities', {
   id: text('id').primaryKey(),
@@ -118,3 +130,89 @@ export const sessionLogs = pgTable('session_logs', {
   durationMinutes: integer('duration_minutes').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const agentTokens = pgTable(
+  'agent_tokens',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    tokenPrefix: text('token_prefix').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    scopes: jsonb('scopes').notNull(),
+    createdBy: text('created_by').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [check('agent_tokens_scopes_array_chk', sql`jsonb_typeof(${t.scopes}) = 'array'`)]
+);
+
+export const agentProposals = pgTable(
+  'agent_proposals',
+  {
+    id: text('id').primaryKey(),
+    tokenId: text('token_id')
+      .notNull()
+      .references(() => agentTokens.id),
+    domain: text('domain').notNull(),
+    operation: text('operation').notNull(),
+    targetTable: text('target_table').notNull(),
+    targetKey: jsonb('target_key').notNull(),
+    changes: jsonb('changes').notNull(),
+    // SQL NULL means the target row did not exist at the last check.
+    before: jsonb('before'),
+    expectedUpdatedAt: text('expected_updated_at'),
+    refreshedAt: timestamp('refreshed_at', { withTimezone: true }),
+    ratingsSource: text('ratings_source'),
+    warnings: jsonb('warnings').notNull().default(sql`'[]'::jsonb`),
+    reason: text('reason').notNull(),
+    idempotencyKey: text('idempotency_key').notNull(),
+    bodyHash: text('body_hash').notNull(),
+    status: text('status').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    decidedBy: text('decided_by'),
+    executedAt: timestamp('executed_at', { withTimezone: true }),
+    result: jsonb('result'),
+  },
+  (t) => [
+    check('agent_proposals_operation_chk', sql`${t.operation} IN ('update', 'delete')`),
+    check(
+      'agent_proposals_status_chk',
+      sql`${t.status} IN ('pending', 'executed', 'failed', 'rejected', 'cancelled', 'expired')`
+    ),
+    check(
+      'agent_proposals_ratings_source_chk',
+      sql`${t.ratingsSource} IS NULL OR ${t.ratingsSource} IN ('user-dictated')`
+    ),
+    unique('agent_proposals_token_idem_uq').on(t.tokenId, t.idempotencyKey),
+    index('agent_proposals_status_expires_idx').on(t.status, t.expiresAt),
+    index('agent_proposals_token_created_idx').on(t.tokenId, t.createdAt),
+  ]
+);
+
+export const agentAuditLog = pgTable(
+  'agent_audit_log',
+  {
+    id: text('id').primaryKey(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    actor: text('actor').notNull(),
+    tokenId: text('token_id').references(() => agentTokens.id),
+    tokenPrefix: text('token_prefix'),
+    userEmail: text('user_email'),
+    action: text('action').notNull(),
+    proposalId: text('proposal_id').references(() => agentProposals.id),
+    method: text('method'),
+    path: text('path'),
+    statusCode: integer('status_code'),
+    durationMs: integer('duration_ms'),
+    details: jsonb('details'),
+  },
+  (t) => [
+    check('agent_audit_log_actor_chk', sql`${t.actor} IN ('agent', 'user', 'system')`),
+    index('agent_audit_log_token_created_idx').on(t.tokenId, t.createdAt),
+    index('agent_audit_log_created_idx').on(t.createdAt),
+  ]
+);
