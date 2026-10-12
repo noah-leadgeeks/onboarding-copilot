@@ -4,6 +4,7 @@ import { pendingSyncStorageKey, readPendingSyncs } from '@/lib/sync-queue';
 import { isHealthSnapshot, notifySyncChanged, retryPendingSessionSyncs, type HealthSnapshot } from '@/lib/sync-status';
 import { connectionLines, friendlyExtractError, isSheetNotConfiguredError, type ConnectionTone } from '@/lib/connection-status';
 import { SyncStatusChip } from '@/app/components/SyncStatusChip';
+import { AgentAccessSection } from '@/app/components/AgentAccessSection';
 import { IMPORTED_SCHEDULE_STORAGE_KEY, readImportedSchedule, writeImportedSchedule, type ImportedSchedule } from '@/lib/imported-schedule';
 import { DIARY_STORAGE_KEY, mergeImportedDiary, readDiary, type StoredDiary } from '@/lib/local-records';
 import { FEEDBACK_STORAGE_KEY, readFeedbackEntries, upsertFeedbackEntry, writeFeedbackEntries } from '@/lib/feedback';
@@ -482,5 +483,6 @@ export default function SettingsPage() {
         {syncMessage && <span className="mt-1 block text-stone-600">{syncMessage}</span>}
       </p>
     </section>
-    <section className="animate-fade-up stagger-3 mt-6 rounded-card bg-white p-6 shadow-soft sm:p-8"><h2 className="flex items-center gap-2 text-lg font-semibold text-stone-900"><span aria-hidden="true" className="inline-block size-2 rounded-full bg-lavender-300" />Guide tour</h2><p className="mt-3 text-stone-600">New to the cockpit? Take a short walkthrough of Today, the timeline, quick notes, and more.</p><a href="/?tour=start" className="mt-4 inline-flex min-h-11 items-center rounded-full border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50">Take the tour again</a></section></main>;
+    <AgentAccessSection />
+    <section className="animate-fade-up stagger-4 mt-6 rounded-card bg-white p-6 shadow-soft sm:p-8"><h2 className="flex items-center gap-2 text-lg font-semibold text-stone-900"><span aria-hidden="true" className="inline-block size-2 rounded-full bg-lavender-300" />Guide tour</h2><p className="mt-3 text-stone-600">New to the cockpit? Take a short walkthrough of Today, the timeline, quick notes, and more.</p><a href="/?tour=start" className="mt-4 inline-flex min-h-11 items-center rounded-full border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50">Take the tour again</a></section></main>;
 }
