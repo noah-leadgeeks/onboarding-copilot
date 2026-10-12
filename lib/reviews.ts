@@ -177,6 +177,13 @@ export const OFFICIAL_MONTHLY_REVIEWS: readonly MonthlyReviewMilestone[] = [
   },
 ];
 
+/** Every review criteria id across all months (technical + values), for validating score maps. */
+export const REVIEW_CRITERIA_IDS: readonly string[] = OFFICIAL_MONTHLY_REVIEWS.flatMap((m) =>
+  [...m.technicalCriteria, ...m.valuesCriteria].map((c) => c.id)
+);
+
+export { STANDARD_SCORES } from './review-scoring';
+
 export function readReviewAssessments(raw: string | null): ReviewSelfAssessment[] {
   if (!raw) return [];
   try {

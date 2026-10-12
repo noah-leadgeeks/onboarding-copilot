@@ -5,6 +5,18 @@
 
 export type LikertScore = 1 | 2 | 3 | 4 | 5 | 6;
 
+export const LIKERT_MIN = 1;
+export const LIKERT_MAX = 6;
+
+export const FEEDBACK_RATING_KEYS = [
+  'communication',
+  'alignment',
+  'understanding',
+  'readiness',
+  'pace',
+  'overall',
+] as const;
+
 export type LikertLabel =
   | '6. Excellent'
   | '5. Very Good'
