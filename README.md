@@ -100,6 +100,38 @@ migrations, seeding, sync scripts and the baseline procedure for an existing
 database are documented in [`docs/DATABASE.md`](docs/DATABASE.md). Leave
 `DATABASE_URL` unset to stay in Sheets mode.
 
+## Agent API (optional, database mode)
+
+An external agent such as OpenClaw can read onboarding data and propose changes
+through `/api/agent/v1/*` with a scoped bearer token. Proposals only take effect
+after the owner approves them in Settings, in the AI agent access section.
+Execution writes the database only, never the spreadsheet. Design and
+trade-offs: [ADR-0007](docs/adr/0007-agent-api-and-approval-boundary.md)
+(Proposed). OpenClaw setup: [`integrations/openclaw/README.md`](integrations/openclaw/README.md).
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `AGENT_ADMIN_EMAILS` | none | Required for the admin routes (token issue and revoke, approve, reject, audit). Comma-separated owner emails; when unset or empty every admin route answers 403. |
+| `AGENT_RATE_LIMIT_READS_PER_MIN` | 60 | Agent reads per token per minute. |
+| `AGENT_RATE_LIMIT_PROPOSALS_PER_MIN` | 10 | Proposal creations and cancellations per token per minute. |
+| `AGENT_MAX_PENDING_PROPOSALS` | 20 | Unexpired pending proposals per token. |
+| `AGENT_PROPOSAL_TTL_HOURS` | 24 | Proposal expiry. |
+| `AGENT_TOKEN_DEFAULT_TTL_DAYS` | 90 | Default token lifetime. |
+
+Production requirements:
+
+- Set `AUTH_SECRET`. Without it (and without `GOOGLE_CLIENT_SECRET`) the admin routes answer 503, because the fallback session key is a public constant.
+- Never set `AUTH_DISABLED` in production. It opens every cookie-gated route; the admin routes refuse to run with it on Vercel or when `NODE_ENV=production`.
+- Keep the Google OAuth consent screen restricted. The app has no login allowlist in code (ADR-0007).
+
+Deploy order: the release adds migration `drizzle/0001_agent_access.sql`. Run
+`pnpm db:migrate "$URL"` against the remote database yourself **before**
+deploying (there is no migrate hook in `vercel.json`). A remote database created
+by the old seed script must go through the baseline procedure in
+[`docs/DATABASE.md`](docs/DATABASE.md) first. Rolling back drops the agent
+tables and permanently loses all agent tokens, proposals and the audit log; see
+the header of the migration file.
+
 ## Development
 
 ```bash

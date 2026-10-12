@@ -201,10 +201,21 @@ Open items from this pass:
 - [ ] `eslint.config.mjs` defines no rules (only `ignores`), so `pnpm lint` checks almost nothing. Add a real rule set.
 - [ ] `pnpm db:seed` (and other `tsx` scripts) fail from a non-root cwd because `lib/feedback.ts`, `lib/timeline.ts` and `lib/schedule-catalog.ts` use `@/` imports. Make them relative.
 - [ ] `lib/test-globals.d.ts` narrows the jest globals (hides `describe.skip`, `toHaveBeenCalled*`, `expect.any`). Consider real `@types/jest`.
-- [ ] `lib/db/migrations.integration.test.ts` hardcodes exactly 1 migration (line 54). Update it whenever a migration is added.
+- [ ] `lib/db/migrations.integration.test.ts` hardcodes the migration count (now 2, line 63). Update it whenever a migration is added.
 - [ ] `pnpm build` was not verified without `.env.local` in the database-hardening change set. Verify it.
 - [ ] User action: run `pnpm db:inspect` against the remote database yourself, then follow the baseline procedure in [`docs/DATABASE.md`](DATABASE.md#existing-remote-database-created-by-the-old-seed-script-user-run-only). Agents never connect to it.
 - [ ] Sync script dry-run output prints private values (learned text, notes, links). Do not paste it into public places; see [`docs/DATABASE.md`](DATABASE.md#output-contains-your-data).
+
+### Agent API follow-ups ([ADR-0007](adr/0007-agent-api-and-approval-boundary.md), Proposed)
+
+- [ ] `session_logs` delete via the agent API (deferred; no delete exists for sessions).
+- [ ] MCP adapter (`mcp.servers.nova`, `streamable-http`) over the same `lib/agent/*` functions; the skill uses curl for now.
+- [ ] `/hooks/wake` notifier so OpenClaw learns when a proposal is decided (polling `GET /proposals/:id` for now).
+- [ ] Audit log retention (`agent_audit_log` grows without bound).
+- [ ] Client-side overlay / stale-tab fix: an open browser tab can overwrite an agent-executed change on its next save (out of scope for the agent API).
+- [ ] Formula-like text and `USER_ENTERED` in the sync routes (ADR-0006 follow-up 5): agent-proposed text that starts with `=`, `+`, `-` or `@` can reach the sheet as a formula.
+- [ ] "Unsynced after agent execution" marker: agent edits are not flagged for the bulk sync. This is a sync change and needs its own plan, momus review and the spreadsheet-sync-safety matrix.
+- [ ] User action: run `pnpm db:migrate "$URL"` on the remote database BEFORE deploying the agent API code (see ADR-0007, Deploy and rollback).
 
 ---
 
