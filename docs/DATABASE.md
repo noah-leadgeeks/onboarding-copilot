@@ -108,7 +108,10 @@ the password does not land in your shell history.
 1. **Inspect.** `pnpm db:inspect "$URL"` (read-only session). Save the output outside the repo. The constraints section excludes NOT NULL entries (PG18 lists them in `pg_constraint`) because the columns section already covers nullability.
 2. **Compare with the baseline.** Compare the columns and constraints with `drizzle/0000_baseline.sql`
    (or with `db:inspect` of a fresh local database after `db:migrate`). Expect only the differences
-   listed above. Anything else: stop and resolve it first.
+   listed above. Anything else: stop and resolve it first. Tables created by `0001` and later
+   migrations (`agent_tokens`, `agent_proposals`, `agent_audit_log`) will be missing on an old
+   remote; that is expected, because step 7 (`db:migrate`) creates them. Compare only against
+   `0000_baseline.sql`.
 3. **If `drizzle.__drizzle_migrations` exists with rows, stop and inspect.** Something already
    migrated or baselined this database. Compare its rows with the `hash`/`created_at` values printed
    by `pnpm -s db:baseline-sql` and find out what wrote them before going further. (An empty table can
@@ -132,13 +135,15 @@ the password does not land in your shell history.
 6. **Record the baseline.** `pnpm -s db:baseline-sql | psql "$URL" -v ON_ERROR_STOP=1`
 
    The script never connects; it prints one transaction that creates `drizzle.__drizzle_migrations`
-   if needed and inserts one row per journal entry (hash = sha256 of the `.sql` file, `created_at` =
-   the journal `when`) unless a row with that `created_at` or newer already exists. Running it twice
-   leaves exactly one row. (`pnpm -s` writes its `$ tsx ...` echo to stderr, so only SQL reaches
+   if needed and inserts ONE row, for `0000_baseline` only (hash = sha256 of the `.sql` file,
+   `created_at` = the journal `when`), unless a row with that `created_at` or newer already exists.
+   Later entries (0001 and up) are deliberately not recorded: they create tables the old database
+   does not have, and `db:migrate` must run them. Running it twice leaves exactly one row. (`pnpm -s` writes its `$ tsx ...` echo to stderr, so only SQL reaches
    psql. If any statement fails, the transaction is rolled back.)
-7. **Confirm nothing is pending.** `pnpm db:migrate "$URL"` must report `applied now: 0`.
+7. **Apply the remaining migrations.** `pnpm db:migrate "$URL"` must report
+   `applied now: <journal entries minus 1>` (currently 1: `0001_agent_access`).
 8. **Inspect again.** `pnpm db:inspect "$URL"`: the columns and constraints now match a fresh
-   database, and `drizzle.__drizzle_migrations` has one row.
+   database, and `drizzle.__drizzle_migrations` has one row per journal entry.
 
 Notes:
 
