@@ -13,6 +13,7 @@ import {
   readHideCompleted,
   splitCompletedRuns,
   reflectedActivityIds,
+  SCHEDULE_WEEK_TABS,
   scheduleCardPrimaryAction,
   scheduleRowToolLabels,
   weekGroupHeading,
@@ -143,6 +144,14 @@ describe('schedule filters', () => {
   it('counts the filters behind the mobile disclosure', () => {
     expect(activeFilterCount(DEFAULT_SCHEDULE_FILTERS)).toBe(0);
     expect(activeFilterCount({ day: 'Monday', status: 'Done', hideCompleted: true })).toBe(3);
+  });
+
+  it('includes Week 1 through Week 10 in SCHEDULE_WEEK_TABS', () => {
+    expect(SCHEDULE_WEEK_TABS).toContain('Week 6');
+    expect(SCHEDULE_WEEK_TABS).toContain('Week 7');
+    expect(SCHEDULE_WEEK_TABS).toContain('Week 8');
+    expect(SCHEDULE_WEEK_TABS).toContain('Week 9');
+    expect(SCHEDULE_WEEK_TABS).toContain('Week 10');
   });
 
   it('reads activity ids from the URL hash', () => {

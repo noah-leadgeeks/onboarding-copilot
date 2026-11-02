@@ -97,7 +97,21 @@ export function nextUpActivity<T extends Pick<ScheduleActivity, 'date' | 'progre
 // Filters
 // ---------------------------------------------------------------------------
 
-export const SCHEDULE_WEEK_TABS = ['All', 'Today', 'Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Monthly Reviews'] as const;
+export const SCHEDULE_WEEK_TABS = [
+  'All',
+  'Today',
+  'Week 1',
+  'Week 2',
+  'Week 3',
+  'Week 4',
+  'Week 5',
+  'Week 6',
+  'Week 7',
+  'Week 8',
+  'Week 9',
+  'Week 10',
+  'Monthly Reviews',
+] as const;
 
 export interface ScheduleFilters {
   week: string;
