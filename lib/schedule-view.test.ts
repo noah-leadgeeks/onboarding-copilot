@@ -50,7 +50,7 @@ describe('groupScheduleByWeek', () => {
     expect(groups[0].items.map((i) => i.id)).toEqual(['w1a', 'w1b']);
   });
 
-  it('covers the whole official catalog: 21/10/7/8/4 weeks then three reviews', () => {
+  it('covers the whole official catalog: 21/10/7/8/4/2/11/7/11/11 weeks then three reviews', () => {
     const groups = groupScheduleByWeek(OFFICIAL_SCHEDULE_ACTIVITIES);
     expect(groups.map((g) => `${g.key}:${g.items.length}`)).toEqual([
       'Week 1:21',
@@ -58,11 +58,16 @@ describe('groupScheduleByWeek', () => {
       'Week 3:7',
       'Week 4:8',
       'Week 5:4',
+      'Week 6:2',
+      'Week 7:11',
+      'Week 8:7',
+      'Week 9:11',
+      'Week 10:11',
       'Month 1 Review:1',
       'Month 2 Review:1',
       'Month 3 Review:1',
     ]);
-    expect(groups.reduce((sum, g) => sum + g.doneCount, 0)).toBe(51);
+    expect(groups.reduce((sum, g) => sum + g.doneCount, 0)).toBe(93);
   });
 
   it('splits finished activities into compact runs between open cards', () => {

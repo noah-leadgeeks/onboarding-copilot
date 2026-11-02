@@ -14,8 +14,8 @@ import {
 } from './schedule-catalog';
 
 describe('Official Schedule Catalog', () => {
-  it('contains 53 activities across Weeks 1 to 5 and Monthly Reviews', () => {
-    expect(OFFICIAL_SCHEDULE_ACTIVITIES.length).toBe(53);
+  it('contains 95 activities across Weeks 1 to 10 and Monthly Reviews', () => {
+    expect(OFFICIAL_SCHEDULE_ACTIVITIES.length).toBe(95);
 
     const first = OFFICIAL_SCHEDULE_ACTIVITIES[0];
     expect(first.rowNumber).toBe(3);
@@ -227,17 +227,17 @@ describe('Official Schedule Catalog', () => {
       expect(chunks[4].range).toBe("'Schedule'!G53:L56");
       expect(chunks[4].rowCount).toBe(4);
 
-      expect(chunks[5].range).toBe("'Schedule'!G58:L58");
-      expect(chunks[5].rowCount).toBe(1);
+      expect(chunks[5].range).toBe("'Schedule'!G58:L100");
+      expect(chunks[5].rowCount).toBe(43);
 
-      expect(chunks[6].range).toBe("'Schedule'!G81:L81");
+      expect(chunks[6].range).toBe("'Schedule'!G102:L102");
       expect(chunks[6].rowCount).toBe(1);
 
-      expect(chunks[7].range).toBe("'Schedule'!G85:L85");
+      expect(chunks[7].range).toBe("'Schedule'!G106:L106");
       expect(chunks[7].rowCount).toBe(1);
 
       const totalRows = chunks.reduce((sum, c) => sum + c.rowCount, 0);
-      expect(totalRows).toBe(53);
+      expect(totalRows).toBe(95);
 
       for (const chunk of chunks) {
         for (const row of chunk.values) {
@@ -246,10 +246,10 @@ describe('Official Schedule Catalog', () => {
       }
     });
 
-    it('exports all 53 schedule activities as TSV lines for clipboard paste', () => {
+    it('exports all 95 schedule activities as TSV lines for clipboard paste', () => {
       const allTsv = clipboardAllScheduleGtoL(OFFICIAL_SCHEDULE_ACTIVITIES);
       const lines = allTsv.split('\n');
-      expect(lines).toHaveLength(53);
+      expect(lines).toHaveLength(95);
 
       const firstLine = lines[0].split('\t');
       expect(firstLine).toHaveLength(6);

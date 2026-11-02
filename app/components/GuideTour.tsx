@@ -45,7 +45,7 @@ export const allPagesTourSteps: readonly GuideTourStep[] = [
     target: 'schedule-toolbar',
     badge: 'Schedule · 90-Day Plan',
     title: 'How to explore & check off sessions',
-    body: `Explore all ${OFFICIAL_SCHEDULE_ACTIVITIES.length} onboarding activities planned across Weeks 1–4 and Months 2 & 3 in one master calendar.`,
+    body: `Explore all ${OFFICIAL_SCHEDULE_ACTIVITIES.length} onboarding activities planned across Weeks 1–10 and Months 2 & 3 in one master calendar.`,
     steps: [
       'Filter by Week: Click tabs like "Week 1", "Week 2", or "Today" to see scheduled sessions.',
       'Search topics or trainers: Type any topic, mentor name, or session number to find activities instantly.',

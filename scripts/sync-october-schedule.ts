@@ -15,11 +15,12 @@ if (!connStr && fs.existsSync('.env.local')) {
   }
 }
 
-if (!connStr) {
+const isMain = Boolean(process.argv[1]?.includes('sync-october-schedule'));
+if (isMain && !connStr) {
   console.error('DATABASE_URL is required. Provide it as an argument or set DATABASE_URL in .env.local.');
   process.exit(1);
 }
-const validConnStr: string = connStr;
+const validConnStr: string = connStr || '';
 
 export interface ActivitySeed {
   id: string;
@@ -861,7 +862,9 @@ async function syncOctoberToRemote() {
   console.log('October activities sync completed successfully!');
 }
 
-syncOctoberToRemote().catch((err) => {
-  console.error('Failed to sync October schedule:', err);
-  process.exit(1);
-});
+if (process.argv[1]?.includes('sync-october-schedule')) {
+  syncOctoberToRemote().catch((err) => {
+    console.error('Failed to sync October schedule:', err);
+    process.exit(1);
+  });
+}

@@ -54,9 +54,9 @@ describe('/api/schedule/sync route', () => {
   it('successfully syncs all activities using batchUpdateSheetRanges', async () => {
     jest.spyOn(sessionModule, 'getSessionAccessToken').mockResolvedValue('valid-access-token');
     const batchSpy = jest.spyOn(extractorModule, 'batchUpdateSheetRanges').mockResolvedValue({
-      totalUpdatedRows: 53,
+      totalUpdatedRows: 95,
       totalUpdatedColumns: 6,
-      totalUpdatedCells: 318,
+      totalUpdatedCells: 570,
       totalUpdatedSheets: 1,
     });
 
@@ -68,9 +68,9 @@ describe('/api/schedule/sync route', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
-    expect(data.totalActivities).toBe(53);
-    expect(data.totalUpdatedRows).toBe(53);
-    expect(data.totalUpdatedCells).toBe(318);
+    expect(data.totalActivities).toBe(95);
+    expect(data.totalUpdatedRows).toBe(95);
+    expect(data.totalUpdatedCells).toBe(570);
     expect(data.chunksCount).toBe(8);
 
     expect(batchSpy.mock.calls.length).toBe(1);
@@ -82,7 +82,9 @@ describe('/api/schedule/sync route', () => {
     expect(calledData[2].range).toBe("'Schedule'!G36:L42");
     expect(calledData[3].range).toBe("'Schedule'!G44:L51");
     expect(calledData[4].range).toBe("'Schedule'!G53:L56");
-    expect(calledData[5].range).toBe("'Schedule'!G58:L58");
+    expect(calledData[5].range).toBe("'Schedule'!G58:L100");
+    expect(calledData[6].range).toBe("'Schedule'!G102:L102");
+    expect(calledData[7].range).toBe("'Schedule'!G106:L106");
     expect(calledAuth).toEqual({ accessToken: 'valid-access-token' });
   });
 

@@ -112,22 +112,22 @@ describe('scheduleRowHasData', () => {
 });
 
 describe('scheduleBulkSyncPlan', () => {
-  it('on the real catalog writes 51 rows and leaves rows 81 and 85 unchanged', () => {
+  it('on the real catalog writes 93 rows and leaves rows 102 and 106 unchanged', () => {
     const plan = scheduleBulkSyncPlan(OFFICIAL_SCHEDULE_ACTIVITIES);
-    expect(OFFICIAL_SCHEDULE_ACTIVITIES).toHaveLength(53);
-    expect(plan.rowsWithData).toHaveLength(51);
-    expect(plan.skipped.map((a) => a.rowNumber)).toEqual([81, 85]);
-    expect(plan.rowsWithData.some((a) => a.rowNumber === 81 || a.rowNumber === 85)).toBe(false);
-    expect(plan.ranges).toEqual(['G3:L23', 'G25:L34', 'G36:L42', 'G44:L51', 'G53:L56', 'G58:L58']);
-    expect(plan.rowSummary).toBe('3–23, 25–34, 36–42, 44–51, 53–56, 58');
-    expect(plan.chunks.reduce((sum, chunk) => sum + chunk.rowCount, 0)).toBe(51);
+    expect(OFFICIAL_SCHEDULE_ACTIVITIES).toHaveLength(95);
+    expect(plan.rowsWithData).toHaveLength(93);
+    expect(plan.skipped.map((a) => a.rowNumber)).toEqual([102, 106]);
+    expect(plan.rowsWithData.some((a) => a.rowNumber === 102 || a.rowNumber === 106)).toBe(false);
+    expect(plan.ranges).toEqual(['G3:L23', 'G25:L34', 'G36:L42', 'G44:L51', 'G53:L56', 'G58:L100']);
+    expect(plan.rowSummary).toBe('3–23, 25–34, 36–42, 44–51, 53–56, 58–100');
+    expect(plan.chunks.reduce((sum, chunk) => sum + chunk.rowCount, 0)).toBe(93);
   });
 
-  it('with data on every catalog row covers every block including 81 and 85', () => {
+  it('with data on every catalog row covers every block including 102 and 106', () => {
     const filled = OFFICIAL_SCHEDULE_ACTIVITIES.map((a) => ({ ...a, notes: a.notes || 'x' }));
     const plan = scheduleBulkSyncPlan(filled);
     expect(plan.skipped).toEqual([]);
-    expect(plan.ranges).toEqual(['G3:L23', 'G25:L34', 'G36:L42', 'G44:L51', 'G53:L56', 'G58:L58', 'G81:L81', 'G85:L85']);
+    expect(plan.ranges).toEqual(['G3:L23', 'G25:L34', 'G36:L42', 'G44:L51', 'G53:L56', 'G58:L100', 'G102:L102', 'G106:L106']);
   });
 
   it('excludes data-less rows from the written list', () => {
